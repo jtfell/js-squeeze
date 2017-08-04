@@ -9,7 +9,7 @@ import GHC.Generics (Generic)
 data Program = Program [ Statement ]
                deriving  (Show,Read,Eq)
 
-data Identifier = Identifier { name :: Text }
+data Identifier = Identifier Text
                   deriving (Show,Read,Eq,Generic)
 
 data LitType = StringLit Text | TrueLit | FalseLit | NumLit Double | Regex
@@ -48,21 +48,18 @@ data Statement = EmptyStatement
                | SwitchStatement Expression [ SwitchCase ] Bool
                | ReturnStatement (Maybe Expression)
                | ThrowStatement Expression
-               | TryStatement Block (Maybe (CatchClause)) [ CatchClause ] (Maybe Block)
+               | TryStatement Block (Maybe CatchClause) [ CatchClause ] (Maybe Block)
                | WhileStatement Expression Statement
                | DoWhileStatement Statement Expression
                | ForStatement (Maybe ForDecl) (Maybe Expression) (Maybe Expression) Statement
                | ForInStatement ForDecl Expression Statement Bool
                | ForOfStatement ForDecl Expression Statement
-               | LetStatement [VariableDeclarator] Statement
                | DebuggerStatement
                | FunctionDeclaration Function
                | VariableDeclaration VariableDecl
                  deriving (Show,Read,Eq)
 
-data VariableKind = Var | Let | Const deriving (Show,Read,Eq)
-
-data VariableDecl = VariableDecl [VariableDeclarator] VariableKind
+data VariableDecl = VariableDecl [VariableDeclarator]
                     deriving (Show,Read,Eq)
 
 data VariableDeclarator = VariableDeclarator Pattern (Maybe Expression)
@@ -83,7 +80,6 @@ data Expression = ThisExpression
                 | ArrayExpression [Maybe Expression]
                 | ObjectExpression [ObjectProp]
                 | FunctionExpression Function
-                | ArrowExpression Lambda
                 | SequenceExpression [Expression]
                 | UnaryExpression UnaryOperator Bool Expression
                 | BinaryExpression BinaryOperator Expression Expression
@@ -94,12 +90,6 @@ data Expression = ThisExpression
                 | NewExpression Expression [Expression]
                 | CallExpression Expression [Expression]
                 | MemberExpression Expression MemberProp Bool
-                | YieldExpression (Maybe Expression)
-                | ComprehensionExpression Expression [ComprehensionBlock] (Maybe Expression)
-                | GeneratorExpression Expression [ComprehensionBlock] (Maybe Expression)
-                | GraphExpression Word32 Literal
-                | GraphIndexExpression Word32
-                | LetExpression [(Pattern, Maybe Expression)] Expression
                 | IdentifierExpression Identifier
                 | LiteralExpression Literal
                  deriving (Show,Read,Eq)
