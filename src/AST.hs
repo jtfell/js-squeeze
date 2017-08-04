@@ -6,72 +6,55 @@ import Data.Word (Word32)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
-data Node a = Node a (Maybe SourceLocation)
-              deriving (Show,Read,Eq,Generic)
-type ExprNode = Node Expression
-type StateNode = Node Statement
-type BlkNode = Node Block
-type IdNode = Node Identifier
-type PatNode = Node Pattern
-
-data SourceLocation = SourceLocation { source :: Maybe Text
-                                     , start :: Position
-                                     , end :: Position
-                                     } deriving (Show,Read,Eq,Generic)
-
-data Position = Position { line :: Word32 -- TODO add the >= 1 to the type
-                         , column :: Word32
-                         } deriving (Show,Read,Eq,Generic)
-
 data Identifier = Identifier { name :: Text }
                   deriving (Show,Read,Eq,Generic)
 
-data LitType = StringLit Text | BoolLit Bool | NumLit Float | Regex
+data LitType = StringLit Text | TrueLit | FalseLit | NumLit Double | Regex
              deriving (Show,Read,Eq,Generic)
 
-data Literal = Literal (Maybe LitType)
+data Literal = Literal LitType
                deriving (Show,Read,Eq)
 
-data Function = Function (Maybe IdNode) Lambda
+data Function = Function (Maybe Identifier) Lambda
                 deriving  (Show,Read,Eq)
 
-data Program = Program [ StateNode ]
+data Program = Program [ Statement ]
                deriving  (Show,Read,Eq)
 
-data LambdaBody = LBlk BlkNode | LExpr ExprNode
+data LambdaBody = LBlk Block | LExpr Expression
                   deriving (Show,Read,Eq)
 
-data Lambda = Lambda {params :: [ PatNode ]
-                     , defaults :: [ ExprNode ]
-                     , rest :: Maybe IdNode
+data Lambda = Lambda {params :: [ Pattern ]
+                     , defaults :: [ Expression ]
+                     , rest :: Maybe Identifier
                      , body :: LambdaBody
                      , generator :: Bool
                      , expression :: Bool } deriving  (Show,Read,Eq,Generic)
 
-data Block =  Block [ StateNode ]
+data Block =  Block [ Statement ]
            deriving (Show,Read,Eq)
 
-data ForDecl = ForVar (Node VariableDecl) | ForExpr (ExprNode)
+data ForDecl = ForVar VariableDecl | ForExpr (Expression)
               deriving (Show,Read,Eq)
 
 data Statement = EmptyStatement 
                | BlockStatement Block
-               | ExpressionStatement ExprNode
-               | IfStatement ExprNode StateNode (Maybe StateNode)
-               | LabeledStatement IdNode StateNode
-               | BreakStatement (Maybe IdNode)
-               | ContinueStatement (Maybe IdNode)
-               | WithStatement ExprNode StateNode
-               | SwitchStatement ExprNode [ Node SwitchCase ] Bool
-               | ReturnStatement (Maybe ExprNode)
-               | ThrowStatement ExprNode
-               | TryStatement BlkNode (Maybe (Node CatchClause)) [ Node CatchClause ] (Maybe BlkNode)
-               | WhileStatement ExprNode StateNode
-               | DoWhileStatement StateNode ExprNode
-               | ForStatement (Maybe ForDecl) (Maybe ExprNode) (Maybe ExprNode) StateNode
-               | ForInStatement ForDecl ExprNode StateNode Bool
-               | ForOfStatement ForDecl ExprNode StateNode
-               | LetStatement [Node VariableDeclarator] StateNode
+               | ExpressionStatement Expression
+               | IfStatement Expression Statement (Maybe Statement)
+               | LabeledStatement Identifier Statement
+               | BreakStatement (Maybe Identifier)
+               | ContinueStatement (Maybe Identifier)
+               | WithStatement Expression Statement
+               | SwitchStatement Expression [ SwitchCase ] Bool
+               | ReturnStatement (Maybe Expression)
+               | ThrowStatement Expression
+               | TryStatement Block (Maybe (CatchClause)) [ CatchClause ] (Maybe Block)
+               | WhileStatement Expression Statement
+               | DoWhileStatement Statement Expression
+               | ForStatement (Maybe ForDecl) (Maybe Expression) (Maybe Expression) Statement
+               | ForInStatement ForDecl Expression Statement Bool
+               | ForOfStatement ForDecl Expression Statement
+               | LetStatement [VariableDeclarator] Statement
                | DebuggerStatement
                | FunctionDeclaration Function
                | VariableDeclaration VariableDecl
@@ -79,61 +62,61 @@ data Statement = EmptyStatement
 
 data VariableKind = Var | Let | Const deriving (Show,Read,Eq)
 
-data VariableDecl = VariableDecl [Node VariableDeclarator] VariableKind
+data VariableDecl = VariableDecl [VariableDeclarator] VariableKind
                     deriving (Show,Read,Eq)
 
-data VariableDeclarator = VariableDeclarator PatNode (Maybe ExprNode)
+data VariableDeclarator = VariableDeclarator Pattern (Maybe Expression)
                           deriving (Show,Read,Eq)
 
 data ObjectKind = Init | Get | Set deriving (Show,Read,Eq)
-data ObjectKey = ObjLit (Node Literal) | ObjId IdNode
+data ObjectKey = ObjLit Literal | ObjId Identifier
                deriving (Show,Read,Eq)
 data ObjectProp = ObjectProp {key :: ObjectKey
-                             ,value :: ExprNode
+                             ,value :: Expression
                              ,kind :: ObjectKind}
                 deriving (Show,Read,Eq,Generic)
 
-data MemberProp = MemId IdNode | MemExpr ExprNode
+data MemberProp = MemId Identifier | MemExpr Expression
                 deriving (Show,Read,Eq)
 
 data Expression = ThisExpression
-                | ArrayExpression [Maybe ExprNode]
+                | ArrayExpression [Maybe Expression]
                 | ObjectExpression [ObjectProp]
                 | FunctionExpression Function
                 | ArrowExpression Lambda
-                | SequenceExpression [ExprNode]
-                | UnaryExpression UnaryOperator Bool ExprNode
-                | BinaryExpression BinaryOperator ExprNode ExprNode
-                | AssignmentExpression AssignmentOperator ExprNode ExprNode
-                | UpdateExpression UpdateOperator ExprNode Bool
-                | LogicalExpression LogicalOperator ExprNode ExprNode
-                | ConditionalExpression ExprNode ExprNode ExprNode
-                | NewExpression ExprNode [ExprNode]
-                | CallExpression ExprNode [ExprNode]
-                | MemberExpression ExprNode MemberProp Bool
-                | YieldExpression (Maybe ExprNode)
-                | ComprehensionExpression ExprNode [Node ComprehensionBlock] (Maybe ExprNode)
-                | GeneratorExpression ExprNode [Node ComprehensionBlock] (Maybe ExprNode)
-                | GraphExpression Word32 (Node Literal)
+                | SequenceExpression [Expression]
+                | UnaryExpression UnaryOperator Bool Expression
+                | BinaryExpression BinaryOperator Expression Expression
+                | AssignmentExpression AssignmentOperator Expression Expression
+                | UpdateExpression UpdateOperator Expression Bool
+                | LogicalExpression LogicalOperator Expression Expression
+                | ConditionalExpression Expression Expression Expression
+                | NewExpression Expression [Expression]
+                | CallExpression Expression [Expression]
+                | MemberExpression Expression MemberProp Bool
+                | YieldExpression (Maybe Expression)
+                | ComprehensionExpression Expression [ComprehensionBlock] (Maybe Expression)
+                | GeneratorExpression Expression [ComprehensionBlock] (Maybe Expression)
+                | GraphExpression Word32 Literal
                 | GraphIndexExpression Word32
-                | LetExpression [(PatNode, Maybe ExprNode)] ExprNode
+                | LetExpression [(Pattern, Maybe Expression)] Expression
                 | IdentifierExpression Identifier
                 | LiteralExpression Literal
                  deriving (Show,Read,Eq)
 
 data Pattern = ObjectPattern [(ObjectKey,Pattern)]
-             | ArrayPattern [Maybe PatNode]
+             | ArrayPattern [Maybe Pattern]
              | IdentifierPattern Identifier
              | ExprPattern Expression
                deriving (Show,Read,Eq)
 
-data SwitchCase = SwitchCase (Maybe ExprNode) [StateNode]
+data SwitchCase = SwitchCase (Maybe Expression) [Statement]
                   deriving (Show,Read,Eq)
 
-data CatchClause = CatchClause PatNode (Maybe ExprNode) BlkNode
+data CatchClause = CatchClause Pattern (Maybe Expression) Block
                    deriving (Show,Read,Eq)
 
-data ComprehensionBlock = ComprehensionBlock PatNode ExprNode Bool
+data ComprehensionBlock = ComprehensionBlock Pattern Expression Bool
                           deriving (Show,Read,Eq)
                         
 

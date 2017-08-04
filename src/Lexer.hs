@@ -68,8 +68,8 @@ integer = Tok.integer lexer
 float :: Parser Double
 float = Tok.float lexer
 
-string :: Parser String
-string = Tok.stringLiteral lexer
+stringLiteral :: Parser String
+stringLiteral = Tok.stringLiteral lexer
 
 parens :: Parser a -> Parser a
 parens = Tok.parens lexer
