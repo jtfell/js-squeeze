@@ -18,6 +18,7 @@ library
   exposed-modules:     Lexer
                      , AST
                      , Parser
+                     , CodeGen
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , text

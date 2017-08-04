@@ -8,6 +8,7 @@ import Text.Parsec
 import Lexer
 import Parser
 import AST
+import CodeGen
 
 main :: IO ()
 main = do
@@ -17,5 +18,8 @@ main = do
     print str
     let parsed = runParser (contents program) () filePath str
     print parsed
+    case parsed of
+        Right prog -> print $ gen prog
+        Left err -> print err
 
     hClose hdl
