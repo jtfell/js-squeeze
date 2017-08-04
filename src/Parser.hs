@@ -13,15 +13,9 @@ import qualified Text.Parsec.Token as Tok
 import Lexer
 import AST
 
-binary s f = Ex.Infix $ reservedOp s >> return (BinaryExpression f)
-
-table = [
-    [binary "*" Times Ex.AssocLeft,
-     binary "/" Div Ex.AssocLeft]
-
-   ,[binary "+" Plus Ex.AssocLeft,
-     binary "-" Minus Ex.AssocLeft]]
-
+--
+-- Literals
+--
 stringLit :: Parser LitType
 stringLit = StringLit <$> fmap pack stringLiteral
 
@@ -36,6 +30,17 @@ numLit = NumLit <$> float
 litType :: Parser LitType
 litType = stringLit <|> boolLit <|> numLit
 
+--
+-- Expressions
+--
+binary s f = Ex.Infix $ reservedOp s >> return (BinaryExpression f)
+
+table = [
+    [binary "*" Times Ex.AssocLeft,
+     binary "/" Div Ex.AssocLeft]
+   ,[binary "+" Plus Ex.AssocLeft,
+     binary "-" Minus Ex.AssocLeft]]
+
 expr :: Parser Expression
 expr = Ex.buildExpressionParser table factor
 
@@ -46,15 +51,23 @@ factor = try literalExpr
 literalExpr :: Parser Expression
 literalExpr = LiteralExpression . Literal <$> litType
 
-program :: Parser Program
-program = Program <$> many1 statement
-
-exprStatement = do
-    exp <- expr
-    return (ExpressionStatement exp)
+--
+-- Statements
+--
+exprStatement :: Parser Statement
+exprStatement = ExpressionStatement <$> expr
 
 statement :: Parser Statement
 statement = try exprStatement
+
+--
+-- Toplevel
+--
+program :: Parser Program
+program = Program <$> statement `endBy` reservedOp ";"
+
+contents :: Parser a -> Parser a
+contents p = Tok.whiteSpace lexer *> p <* eof
 
 -- variable :: Parser Expr
 -- variable = do
@@ -95,22 +108,3 @@ statement = try exprStatement
 -- defn = try extern
 --     <|> try function
 --     <|> expr
--- 
--- contents :: Parser a -> Parser a
--- contents p = do
---   Tok.whiteSpace lexer
---   r <- p
---   eof
---   return r
--- 
--- toplevel :: Parser [Expr]
--- toplevel = many $ do
---      def <- defn
---      reservedOp ";"
---      return def
--- 
--- parseExpr :: String -> Either ParseError Expr
--- parseExpr s = parse (contents expr) "<stdin>" s
--- 
--- parseToplevel :: String -> Either ParseError [Expr]
--- parseToplevel s = parse (contents toplevel) "<stdin>" s

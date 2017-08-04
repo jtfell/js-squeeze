@@ -62,11 +62,12 @@ lexer = Tok.makeTokenParser style
              , Tok.reservedNames = names
              }
 
-integer :: Parser Integer
-integer = Tok.integer lexer
-
 float :: Parser Double
-float = Tok.float lexer
+float = do
+    num <- Tok.naturalOrFloat lexer
+    case num of
+        (Left int) -> return (fromIntegral int)
+        (Right fl) -> return fl
 
 stringLiteral :: Parser String
 stringLiteral = Tok.stringLiteral lexer

@@ -6,6 +6,9 @@ import Data.Word (Word32)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
+data Program = Program [ Statement ]
+               deriving  (Show,Read,Eq)
+
 data Identifier = Identifier { name :: Text }
                   deriving (Show,Read,Eq,Generic)
 
@@ -17,9 +20,6 @@ data Literal = Literal LitType
 
 data Function = Function (Maybe Identifier) Lambda
                 deriving  (Show,Read,Eq)
-
-data Program = Program [ Statement ]
-               deriving  (Show,Read,Eq)
 
 data LambdaBody = LBlk Block | LExpr Expression
                   deriving (Show,Read,Eq)
