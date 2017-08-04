@@ -17,8 +17,8 @@ instance Gen Literal where
 
 instance Gen LitType where
   gen (StringLit text) = text
-  gen TrueLit = "true"
-  gen FalseLit = "false"
+  gen TrueLit = "!0"
+  gen FalseLit = "!1"
   gen (NumLit num) = T.pack $ show num
 
 instance Gen Program where
