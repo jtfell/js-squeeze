@@ -21,15 +21,8 @@ data Literal = Literal LitType
 data Function = Function (Maybe Identifier) Lambda
                 deriving  (Show,Read,Eq)
 
-data LambdaBody = LBlk Block | LExpr Expression
-                  deriving (Show,Read,Eq)
-
-data Lambda = Lambda {params :: [ Pattern ]
-                     , defaults :: [ Expression ]
-                     , rest :: Maybe Identifier
-                     , body :: LambdaBody
-                     , generator :: Bool
-                     , expression :: Bool } deriving  (Show,Read,Eq,Generic)
+data Lambda = Lambda [ Pattern ] Block
+              deriving  (Show,Read,Eq,Generic)
 
 data Block =  Block [ Statement ]
            deriving (Show,Read,Eq)
@@ -88,7 +81,7 @@ data Expression = ThisExpression
                 | LogicalExpression LogicalOperator Expression Expression
                 | ConditionalExpression Expression Expression Expression
                 | NewExpression Expression [Expression]
-                | CallExpression Expression [Expression]
+                | CallExpression Identifier [Expression]
                 | MemberExpression Expression MemberProp Bool
                 | IdentifierExpression Identifier
                 | LiteralExpression Literal

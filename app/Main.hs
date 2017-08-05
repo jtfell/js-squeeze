@@ -15,7 +15,6 @@ main = do
     filePath:xs <- getArgs
     hdl <- openFile filePath ReadMode
     str <- hGetContents hdl
-    print str
     let parsed = runParser (contents program) () filePath str
     print parsed
     case parsed of

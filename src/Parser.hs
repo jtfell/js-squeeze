@@ -3,7 +3,6 @@
 --
 -- Leaving out:
 --
---   * functions
 --   * arrays
 --   * objects
 --   * if/else
@@ -31,6 +30,25 @@ pat = try id <|> try ex
     where
         id = IdentifierPattern <$> ident
         ex = ExprPattern <$> expr
+
+--
+-- Functions
+--
+function :: Parser Function
+function = do
+    reserved "function"
+    id <- optionMaybe ident
+    lam <- lambda
+    return $ Function id lam
+
+lambda :: Parser Lambda
+lambda = do
+    params <- parens $ commaSep pat
+    body <- block
+    return $ Lambda params body
+
+block :: Parser Block
+block = Block <$> braces (statement `sepEndBy` (reservedOp ";"))
 
 --
 -- Literals
@@ -74,8 +92,19 @@ expr = Ex.buildExpressionParser table factor
 
 factor :: Parser Expression
 factor = try literalExpr
+     <|> try callExpr
+     <|> try functionExpr
      <|> try identifierExpr
      <|> parens expr
+
+functionExpr :: Parser Expression
+functionExpr = FunctionExpression <$> function
+
+callExpr :: Parser Expression
+callExpr = do
+    func <- ident
+    params <- parens $ commaSep expr
+    return $ CallExpression func params
 
 literalExpr :: Parser Expression
 literalExpr = LiteralExpression . Literal <$> litType
@@ -89,6 +118,9 @@ identifierExpr = IdentifierExpression <$> ident
 exprStatement :: Parser Statement
 exprStatement = ExpressionStatement <$> expr
 
+funcStatement :: Parser Statement
+funcStatement = FunctionDeclaration <$> function
+
 variableDeclarator :: Parser VariableDeclarator
 variableDeclarator = do
     var <- pat
@@ -98,21 +130,26 @@ variableDeclarator = do
 variableDecl :: Parser VariableDecl
 variableDecl = do
     reserved "var"
-    decls <- variableDeclarator `sepBy1` reservedOp ","
+    decls <- commaSep variableDeclarator
     return $ VariableDecl decls
 
 variableDeclStatement :: Parser Statement
 variableDeclStatement = VariableDeclaration <$> variableDecl
 
+returnStatement :: Parser Statement
+returnStatement = ReturnStatement <$> (reserved "return" *> optionMaybe expr)
+
 statement :: Parser Statement
 statement = try exprStatement
     <|> try variableDeclStatement
+    <|> try funcStatement
+    <|> try returnStatement
 
 --
 -- Toplevel
 --
 program :: Parser Program
-program = Program <$> statement `endBy` reservedOp ";"
+program = Program <$> statement `sepEndBy` reservedOp ";"
 
 contents :: Parser a -> Parser a
 contents p = Tok.whiteSpace lexer *> p <* eof

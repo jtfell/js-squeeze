@@ -16,7 +16,7 @@ lexer = Tok.makeTokenParser style
       "%", ">>", "<<", ">>>", "<<<",
       "||","&&","|","&",
       "instanceof", "in",
-      ";",
+      ";", ",",
 
       -- Unary ops
       "!","~","typeof","void","delete",
@@ -57,9 +57,9 @@ lexer = Tok.makeTokenParser style
       "null",
       "undefined"]
     style = emptyDef {
-               Tok.commentLine = "//"
-             , Tok.reservedOpNames = ops
-             , Tok.reservedNames = names
+                 Tok.commentLine = "//"
+               , Tok.reservedOpNames = ops
+               , Tok.reservedNames = names
              }
 
 float :: Parser Double
@@ -77,6 +77,9 @@ parens = Tok.parens lexer
 
 brackets :: Parser a -> Parser a
 brackets = Tok.brackets lexer
+
+braces :: Parser a -> Parser a
+braces = Tok.braces lexer
 
 colon :: Parser String
 colon = Tok.colon lexer
