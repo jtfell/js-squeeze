@@ -81,8 +81,8 @@ data Expression = ThisExpression
                 | LogicalExpression LogicalOperator Expression Expression
                 | ConditionalExpression Expression Expression Expression
                 | NewExpression Expression [Expression]
-                | CallExpression Identifier [Expression]
-                | MemberExpression Expression MemberProp Bool
+                | CallExpression Expression [Expression]
+                | MemberExpression Expression [MemberProp]
                 | IdentifierExpression Identifier
                 | LiteralExpression Literal
                  deriving (Show,Read,Eq)

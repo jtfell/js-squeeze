@@ -49,6 +49,10 @@ instance Gen Expression where
   gen (BinaryExpression op e1 e2) = T.concat [gen e1, gen op, gen e2]
   gen (CallExpression id args) = T.concat [gen id, "(", T.intercalate "," $ fmap gen args, ")"]
   gen (FunctionExpression func) = gen func
+  gen (MemberExpression mem props) = T.concat [gen mem, T.concat $ fmap gen props]
+
+instance Gen MemberProp where
+  gen (MemId id) = mappend "." $ gen id
 
 instance Gen Function where
   gen (Function Nothing lam) = T.concat ["function ", gen lam]

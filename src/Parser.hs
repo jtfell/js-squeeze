@@ -48,7 +48,7 @@ lambda = do
     return $ Lambda params body
 
 block :: Parser Block
-block = Block <$> braces (statement `sepEndBy` (reservedOp ";"))
+block = Block <$> braces (statement `sepEndBy` reservedOp ";")
 
 --
 -- Literals
@@ -66,6 +66,21 @@ numLit = NumLit <$> float
 
 litType :: Parser LitType
 litType = stringLit <|> boolLit <|> numLit
+
+--
+-- Variables
+--
+variableDeclarator :: Parser VariableDeclarator
+variableDeclarator = do
+    var <- pat
+    ex <- optionMaybe (reservedOp "=" *> expr)
+    return $ VariableDeclarator var ex
+
+variableDecl :: Parser VariableDecl
+variableDecl = do
+    reserved "var"
+    decls <- commaSep variableDeclarator
+    return $ VariableDecl decls
 
 --
 -- Expressions
@@ -91,19 +106,35 @@ expr :: Parser Expression
 expr = Ex.buildExpressionParser table factor
 
 factor :: Parser Expression
-factor = try literalExpr
+factor = try functionExpr
      <|> try callExpr
-     <|> try functionExpr
-     <|> try identifierExpr
+     <|> try primaryExpr
+     <|> try memberExpr
      <|> parens expr
+
+primaryExpr = try identifierExpr
+     <|> try literalExpr
+     <|> try thisExpr
+ 
+memberProp :: Parser MemberProp
+memberProp = MemId <$> (reservedOp "." *> ident)
+
+memberExpr :: Parser Expression
+memberExpr = do
+    prim <- primaryExpr
+    parts <- many memberProp
+    return $ MemberExpression prim parts
+
+thisExpr :: Parser Expression
+thisExpr = reserved "this" *> return ThisExpression
 
 functionExpr :: Parser Expression
 functionExpr = FunctionExpression <$> function
 
 callExpr :: Parser Expression
 callExpr = do
-    func <- ident
-    params <- parens $ commaSep expr
+    func <- memberExpr
+    params <- parens $ expr `sepBy` reservedOp ","
     return $ CallExpression func params
 
 literalExpr :: Parser Expression
@@ -121,18 +152,6 @@ exprStatement = ExpressionStatement <$> expr
 funcStatement :: Parser Statement
 funcStatement = FunctionDeclaration <$> function
 
-variableDeclarator :: Parser VariableDeclarator
-variableDeclarator = do
-    var <- pat
-    ex <- optionMaybe (reservedOp "=" *> expr)
-    return $ VariableDeclarator var ex
-
-variableDecl :: Parser VariableDecl
-variableDecl = do
-    reserved "var"
-    decls <- commaSep variableDeclarator
-    return $ VariableDecl decls
-
 variableDeclStatement :: Parser Statement
 variableDeclStatement = VariableDeclaration <$> variableDecl
 
@@ -140,10 +159,10 @@ returnStatement :: Parser Statement
 returnStatement = ReturnStatement <$> (reserved "return" *> optionMaybe expr)
 
 statement :: Parser Statement
-statement = try exprStatement
-    <|> try variableDeclStatement
+statement = try variableDeclStatement
     <|> try funcStatement
     <|> try returnStatement
+    <|> try exprStatement
 
 --
 -- Toplevel

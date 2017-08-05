@@ -1,5 +1,12 @@
+
+
+var t = a + true;
+var x;
+var y;
+
 function topFunc(hello, a) {
-  var hello = true;
-  var t = "dd";
-  return console("hello");
+  var t = a + true;
+  var x;
+  var y;
+  return console.log.warp.drive(hello, t, x, y);
 }

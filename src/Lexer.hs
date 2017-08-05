@@ -16,7 +16,7 @@ lexer = Tok.makeTokenParser style
       "%", ">>", "<<", ">>>", "<<<",
       "||","&&","|","&",
       "instanceof", "in",
-      ";", ",",
+      ";", ",", ".",
 
       -- Unary ops
       "!","~","typeof","void","delete",
