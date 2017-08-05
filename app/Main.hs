@@ -23,8 +23,6 @@ main = do
     -- Run the parser to convert to an AST
     let parsed = runParser (contents program) () "" str
 
-    print parsed
-
     -- If valid syntax, we minify the program and run the code generation step
     -- Otherwise, print the error
     case parsed of

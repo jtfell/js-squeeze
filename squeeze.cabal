@@ -2,12 +2,12 @@ name:                squeeze
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/squeeze#readme
+homepage:            https://github.com/jtfell/js-squeeze#readme
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2017 Author name here
+author:              Julian Fell
+maintainer:          Julian Fell
+copyright:           2017 Julian Fell
 category:            Web
 build-type:          Simple
 extra-source-files:  README.md
@@ -46,4 +46,4 @@ test-suite squeeze-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/squeeze
+  location: https://github.com/jtfell/js-squeeze

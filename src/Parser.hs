@@ -1,14 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
---
--- Leaving out:
---
---   * arrays
---   * objects
---   * if/else
---   * loops (incl break, continue etc)
---
-
 module Parser where
 
 import Data.Text

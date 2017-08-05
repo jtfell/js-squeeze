@@ -32,11 +32,11 @@ instance Gen Statement where
   gen (FunctionDeclaration s) = gen s
 
 instance Gen VariableDecl where
-  gen (VariableDecl vars) = T.intercalate "," $ fmap gen vars
+  gen (VariableDecl vars) = mappend "var " $ T.intercalate "," $ fmap gen vars
 
 instance Gen VariableDeclarator where
-  gen (VariableDeclarator p Nothing) = mappend "var " (gen p)
-  gen (VariableDeclarator p (Just e)) = T.concat ["var ", gen p, "=", gen e]
+  gen (VariableDeclarator p Nothing) = gen p
+  gen (VariableDeclarator p (Just e)) = T.concat [gen p, "=", gen e]
 
 instance Gen Pattern where
   gen (ExprPattern e) = gen e
