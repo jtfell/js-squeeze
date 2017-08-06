@@ -23,7 +23,8 @@ import Data.Map as M
 --
 eliminateDeadCode :: [Statement] -> [Statement]
 eliminateDeadCode [] = []
-eliminateDeadCode (FunctionDeclaration (Function id lam):xs) = FunctionDeclaration (Function id (lookInsideLambda lam)):eliminateDeadCode xs
+eliminateDeadCode (FunctionDeclaration (Function id lam):xs) =
+    FunctionDeclaration (Function id (lookInsideLambda lam)):eliminateDeadCode xs
 eliminateDeadCode (a:xs) = a:eliminateDeadCode xs
 
 lookInsideLambda :: Lambda -> Lambda

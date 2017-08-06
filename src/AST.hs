@@ -27,7 +27,7 @@ data Lambda = Lambda [ Pattern ] Block
 data Block =  Block [ Statement ]
            deriving (Show,Read,Eq)
 
-data ForDecl = ForVar VariableDecl | ForExpr (Expression)
+data ForDecl = ForVar VariableDecl | ForExpr Expression
               deriving (Show,Read,Eq)
 
 data Statement = EmptyStatement 
