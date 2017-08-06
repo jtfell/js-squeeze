@@ -39,7 +39,7 @@ lambda = do
     return $ Lambda params body
 
 block :: Parser Block
-block = Block <$> braces (statement `sepEndBy` reservedOp ";")
+block = Block <$> braces (many statement) 
 
 --
 -- Literals
@@ -138,16 +138,16 @@ identifierExpr = IdentifierExpression <$> ident
 -- Statements
 --
 exprStatement :: Parser Statement
-exprStatement = ExpressionStatement <$> expr
+exprStatement = ExpressionStatement <$> expr <* reservedOp ";"
 
 funcStatement :: Parser Statement
-funcStatement = FunctionDeclaration <$> function
+funcStatement = FunctionDeclaration <$> function <* optional (reservedOp ";")
 
 variableDeclStatement :: Parser Statement
-variableDeclStatement = VariableDeclaration <$> variableDecl
+variableDeclStatement = VariableDeclaration <$> variableDecl <* reservedOp ";"
 
 returnStatement :: Parser Statement
-returnStatement = ReturnStatement <$> (reserved "return" *> optionMaybe expr)
+returnStatement = ReturnStatement <$> (reserved "return" *> optionMaybe expr) <* reservedOp ";"
 
 statement :: Parser Statement
 statement = try variableDeclStatement
@@ -159,7 +159,7 @@ statement = try variableDeclStatement
 -- Toplevel
 --
 program :: Parser Program
-program = Program <$> statement `sepEndBy` reservedOp ";"
+program = Program <$> many statement
 
 contents :: Parser a -> Parser a
 contents p = Tok.whiteSpace lexer *> p <* eof
