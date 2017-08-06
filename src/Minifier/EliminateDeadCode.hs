@@ -4,6 +4,8 @@ import AST
 import Data.Text as T
 import Data.Map as M
 
+import Control.Lens
+
 --
 -- Eliminate dead code
 --
@@ -23,14 +25,16 @@ import Data.Map as M
 --
 eliminateDeadCode :: [Statement] -> [Statement]
 eliminateDeadCode [] = []
-eliminateDeadCode (FunctionDeclaration (Function id lam):xs) =
-    FunctionDeclaration (Function id (lookInsideLambda lam)):eliminateDeadCode xs
+eliminateDeadCode (FunctionDeclaration fn:xs) =
+    FunctionDeclaration (applyToLambda fn):eliminateDeadCode xs
 eliminateDeadCode (a:xs) = a:eliminateDeadCode xs
 
-lookInsideLambda :: Lambda -> Lambda
-lookInsideLambda (Lambda p (Block ss)) = Lambda p (Block (removeAfterReturn ss))
+applyToLambda :: Function -> Function
+applyToLambda = over (lam . blk . statements) removeAfterReturn
 
 removeAfterReturn :: [Statement] -> [Statement]
 removeAfterReturn [] = []
 removeAfterReturn (ReturnStatement s:xs) = [ReturnStatement s]
 removeAfterReturn (s:xs) = s:removeAfterReturn xs
+
+

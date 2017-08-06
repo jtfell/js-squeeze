@@ -27,6 +27,7 @@ library
                      , parsec
                      , text
                      , containers
+                     , lens
   default-language:    Haskell2010
 
 executable squeeze-exe

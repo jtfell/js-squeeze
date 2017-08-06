@@ -6,5 +6,3 @@ function hey(a) {
   var p = "hey";
   console.log(p);
 }
-
-

@@ -1,13 +1,16 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module AST where
 
 import Data.Word (Word32)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Control.Lens
 
 data Program = Program [ Statement ]
                deriving  (Show,Read,Eq)
+
 
 data Identifier = Identifier Text
                   deriving (Show,Read,Eq,Generic)
@@ -18,14 +21,19 @@ data LitType = StringLit Text | TrueLit | FalseLit | NumLit Double | Regex
 data Literal = Literal LitType
                deriving (Show,Read,Eq)
 
-data Function = Function (Maybe Identifier) Lambda
-                deriving  (Show,Read,Eq)
+data Function = Function {
+      _funcName :: (Maybe Identifier)
+    , _lam :: Lambda
+    } deriving  (Show,Read,Eq)
 
-data Lambda = Lambda [ Pattern ] Block
-              deriving  (Show,Read,Eq,Generic)
+data Lambda = Lambda {
+      _patterns :: [ Pattern ]
+    , _blk :: Block
+    } deriving  (Show,Read,Eq,Generic)
 
-data Block =  Block [ Statement ]
-           deriving (Show,Read,Eq)
+data Block =  Block {
+      _statements :: [ Statement ]
+    } deriving (Show,Read,Eq)
 
 data ForDecl = ForVar VariableDecl | ForExpr Expression
               deriving (Show,Read,Eq)
@@ -55,8 +63,10 @@ data Statement = EmptyStatement
 data VariableDecl = VariableDecl [VariableDeclarator]
                     deriving (Show,Read,Eq)
 
-data VariableDeclarator = VariableDeclarator Pattern (Maybe Expression)
-                          deriving (Show,Read,Eq)
+data VariableDeclarator = VariableDeclarator {
+        _patt :: Pattern
+      , _m_expression :: (Maybe Expression)
+      } deriving (Show,Read,Eq)
 
 data ObjectKind = Init | Get | Set deriving (Show,Read,Eq)
 data ObjectKey = ObjLit Literal | ObjId Identifier
@@ -122,3 +132,9 @@ data AssignmentOperator = Assign | PlusAssign | MinusAssign | MultAssign | DivAs
 data UpdateOperator = Increment | Decrement
                       deriving (Show,Read,Eq)
 
+makeLenses ''Lambda
+makeLenses ''Function
+makeLenses ''Identifier
+makeLenses ''Program
+makeLenses ''VariableDeclarator
+makeLenses ''Block
