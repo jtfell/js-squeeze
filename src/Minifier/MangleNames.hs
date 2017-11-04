@@ -15,19 +15,19 @@
 module Minifier.MangleNames (mangleNames) where
 
 import AST
-import Data.Text as T
-import Data.Map as M
+import Data.Text as T hiding (concatMap, length, take, zip, foldl)
+import Data.Map as M hiding (foldl)
 
-import Control.Lens
+import Control.Monad (replicateM)
 
--- Keep track of all the vars in a scope so we can effectively mangle them
+-- Mapping of all the identifiers in a scope so we can effectively mangle them
 type VarScope = M.Map Text Text
 
 -- 
 -- 1. Generate a list of all the identifiers in the program
 --
 getVarDecls :: VariableDecl -> [Text]
-getVarDecls (VariableDecl decls) = Prelude.concatMap getVarDecl decls
+getVarDecls (VariableDecl decls) = concatMap getVarDecl decls
 
 getVarDecl :: VariableDeclarator -> [Text]
 getVarDecl (VariableDeclarator patt exp) = getPatt patt
@@ -42,7 +42,7 @@ getPatt :: Pattern -> [Text]
 getPatt (IdentifierPattern id) = getIdentifier id
 
 getLambda :: Lambda -> [Text]
-getLambda (Lambda patt blk) = mappend (Prelude.concatMap getPatt patt) (getBlock blk)
+getLambda (Lambda patt blk) = mappend (concatMap getPatt patt) (getBlock blk)
 
 getFnDecl :: Function -> [Text]
 getFnDecl (Function Nothing lam) = getLambda lam
@@ -52,19 +52,21 @@ getIdentifier :: Identifier -> [Text]
 getIdentifier (Identifier txt) = [txt]
 
 getBlock :: Block -> [Text]
-getBlock (Block ss) = Prelude.concatMap getStatement ss
+getBlock (Block ss) = concatMap getStatement ss
 
 --
 -- 2. Create a mapping from each unique identifiers to a shortened name (ascending the alphabet)
 --
-addNewMapping :: VarScope -> Text -> VarScope
-addNewMapping scope txt = insertIfNotExists txt "fish" scope
-  -- TODO: go up the alphabet (Use state monad?)
+identList = fmap T.pack $ [1..] >>= (`replicateM` "abcdefghijklmnopqrstuvwxyz") 
+
+addMapping :: VarScope -> (Text, Text) -> VarScope
+addMapping scope (txt, id) = insertIfNotExists txt id scope
   where insertIfNotExists = M.insertWith (\new old -> old)
 
-buildUpScope :: [Statement] -> VarScope
-buildUpScope ss = Prelude.foldl addNewMapping M.empty varList
-    where varList = Prelude.foldl (\xs s -> mappend xs $ getStatement s) [] ss
+constructScope :: [Statement] -> VarScope
+constructScope ss = foldl addMapping M.empty identPairs
+  where identPairs = zip idents (take (length idents) identList)
+        idents = concatMap getStatement ss
 
 --
 -- 3. Transform each construct in the program, substituting each identifier as per the mapping
@@ -87,6 +89,7 @@ remapExp scope (BinaryExpression op e1 e2) = BinaryExpression op (remapExp scope
 remapExp scope (AssignmentExpression op e1 e2) = AssignmentExpression op (remapExp scope e1)(remapExp scope e2)
 remapExp scope (LogicalExpression op e1 e2) = LogicalExpression op (remapExp scope e1)(remapExp scope e2)
 remapExp scope (CallExpression fnExp params) = CallExpression (remapExp scope fnExp) (fmap (remapExp scope) params)
+remapExp scope (MemberExpression exp props) = MemberExpression (remapExp scope exp) props
 remapExp scope (IdentifierExpression id) = IdentifierExpression (remapIdent scope id)
 remapExp _ exp = exp
 
@@ -121,4 +124,4 @@ remapIdent scope (Identifier id) = Identifier (M.findWithDefault "broken" id sco
 -- Build up mapping of old var names to new short ones, then map over
 -- each statement in the list and make the substitutions
 mangleNames :: [Statement] -> [Statement]
-mangleNames ss = fmap (remapStatement (buildUpScope ss)) ss
+mangleNames ss = fmap (remapStatement (constructScope ss)) ss
