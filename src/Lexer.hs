@@ -69,6 +69,7 @@ float = do
         (Left int) -> return (fromIntegral int)
         (Right fl) -> return fl
 
+-- TODO: allow single quoted strings
 stringLiteral :: Parser String
 stringLiteral = Tok.stringLiteral lexer
 

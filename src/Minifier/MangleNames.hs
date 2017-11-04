@@ -1,5 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+--
+-- Mangle names
+--
+-- eg. var longName = 'good';console.log(longName); => var a = 'good';console.log(a);
+--
+-- Process:
+--
+-- 1. Generate a list of all the identifiers in the program
+-- 2. Create a mapping from each unique identifiers to a shortened name (ascending the alphabet)
+-- 3. Transform each construct in the program, substituting each identifier as per the mapping
+--
+
 module Minifier.MangleNames (mangleNames) where
 
 import AST
@@ -8,46 +20,54 @@ import Data.Map as M
 
 import Control.Lens
 
---
--- Mangle names
---
--- eg. var longName = 'good';console.log(longName); => var a = 'good';console.log(a);
---
-
 -- Keep track of all the vars in a scope so we can effectively mangle them
 type VarScope = M.Map Text Text
 
 -- 
--- Generate a mapping of all the vars declared in a list of statements
+-- 1. Generate a list of all the identifiers in the program
 --
-getVarDecNames :: VariableDecl -> [Text]
-getVarDecNames (VariableDecl decls) = fmap getVarDecName decls 
+getVarDecls :: VariableDecl -> [Text]
+getVarDecls (VariableDecl decls) = Prelude.concatMap getVarDecl decls
 
-getVarDecName :: VariableDeclarator -> Text
-getVarDecName (VariableDeclarator (IdentifierPattern (Identifier id)) _) = id
+getVarDecl :: VariableDeclarator -> [Text]
+getVarDecl (VariableDeclarator patt exp) = getPatt patt
 
--- TODO: use lenses for this somehow
--- getVarDecNames :: VariableDecl -> [Text]
--- getVarDecNames = view (var_decls . traverse . var_patt . patt_id . id_id)
+getStatement :: Statement -> [Text]
+getStatement (VariableDeclaration varDec) = getVarDecls varDec
+getStatement (BlockStatement blk) = getBlock blk
+getStatement (FunctionDeclaration fn) = getFnDecl fn
+getStatement _ = []
 
+getPatt :: Pattern -> [Text]
+getPatt (IdentifierPattern id) = getIdentifier id
+
+getLambda :: Lambda -> [Text]
+getLambda (Lambda patt blk) = mappend (Prelude.concatMap getPatt patt) (getBlock blk)
+
+getFnDecl :: Function -> [Text]
+getFnDecl (Function Nothing lam) = getLambda lam
+getFnDecl (Function (Just id) lam) = mappend (getIdentifier id) (getLambda lam)
+
+getIdentifier :: Identifier -> [Text]
+getIdentifier (Identifier txt) = [txt]
+
+getBlock :: Block -> [Text]
+getBlock (Block ss) = Prelude.concatMap getStatement ss
+
+--
+-- 2. Create a mapping from each unique identifiers to a shortened name (ascending the alphabet)
+--
 addNewMapping :: VarScope -> Text -> VarScope
-addNewMapping scope id = insertIfNotExists id "fish" scope
+addNewMapping scope txt = insertIfNotExists txt "fish" scope
   -- TODO: go up the alphabet (Use state monad?)
   where insertIfNotExists = M.insertWith (\new old -> old)
 
-addToScope :: VarScope -> Statement -> VarScope
-addToScope scope (VariableDeclaration varDec) = addMultipleMappings scope varDec
--- TODO: Handle other types of statements, exprs..
--- addToScope scope (BlockStatement (Block blk)) = addMultipleMappings scope 
-addToScope scope _ = scope
-
-addMultipleMappings scope decls = Prelude.foldl addNewMapping scope $ getVarDecNames decls
-
 buildUpScope :: [Statement] -> VarScope
-buildUpScope = Prelude.foldl addToScope M.empty
+buildUpScope ss = Prelude.foldl addNewMapping M.empty varList
+    where varList = Prelude.foldl (\xs s -> mappend xs $ getStatement s) [] ss
 
 --
--- Rename all usages of each mapping in the scope
+-- 3. Transform each construct in the program, substituting each identifier as per the mapping
 --
 remapStatement :: VarScope -> Statement -> Statement
 remapStatement scope (BlockStatement (Block blk)) = BlockStatement (Block (fmap (remapStatement scope) blk))
@@ -93,6 +113,8 @@ remapPatt :: VarScope -> Pattern -> Pattern
 remapPatt scope (IdentifierPattern id) = IdentifierPattern (remapIdent scope id)
 remapPatt scope (ExprPattern exp) = ExprPattern (remapExp scope exp)
 
+
+-- TODO: Throw a runtime error when identifier not found in scope
 remapIdent :: VarScope -> Identifier -> Identifier
 remapIdent scope (Identifier id) = Identifier (M.findWithDefault "broken" id scope)
 
