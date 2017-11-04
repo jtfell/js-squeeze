@@ -11,8 +11,9 @@ import Control.Lens
 data Program = Program [ Statement ]
                deriving  (Show,Read,Eq)
 
-
-data Identifier = Identifier Text
+data Identifier = Identifier {
+                    _id_id :: Text
+                  }
                   deriving (Show,Read,Eq,Generic)
 
 data LitType = StringLit Text | TrueLit | FalseLit | NumLit Double | Regex
@@ -22,7 +23,7 @@ data Literal = Literal LitType
                deriving (Show,Read,Eq)
 
 data Function = Function {
-      _funcName :: (Maybe Identifier)
+      _funcName :: Maybe Identifier
     , _lam :: Lambda
     } deriving  (Show,Read,Eq)
 
@@ -60,12 +61,13 @@ data Statement = EmptyStatement
                | VariableDeclaration VariableDecl
                  deriving (Show,Read,Eq)
 
-data VariableDecl = VariableDecl [VariableDeclarator]
-                    deriving (Show,Read,Eq)
+data VariableDecl = VariableDecl {
+        _var_decls :: [VariableDeclarator]
+      } deriving (Show,Read,Eq)
 
 data VariableDeclarator = VariableDeclarator {
-        _patt :: Pattern
-      , _m_expression :: (Maybe Expression)
+        _var_patt :: Pattern
+      , _var_expr :: Maybe Expression
       } deriving (Show,Read,Eq)
 
 data ObjectKind = Init | Get | Set deriving (Show,Read,Eq)
@@ -97,10 +99,18 @@ data Expression = ThisExpression
                 | LiteralExpression Literal
                  deriving (Show,Read,Eq)
 
-data Pattern = ObjectPattern [(ObjectKey,Pattern)]
-             | ArrayPattern [Maybe Pattern]
-             | IdentifierPattern Identifier
-             | ExprPattern Expression
+data Pattern = ObjectPattern {
+                 _patt_obj :: [(ObjectKey,Pattern)]
+               }
+             | ArrayPattern {
+                 _patt_arr :: [Maybe Pattern]
+               }
+             | IdentifierPattern {
+                 _patt_id :: Identifier
+               }
+             | ExprPattern {
+                 _patt_expr :: Expression
+               }
                deriving (Show,Read,Eq)
 
 data SwitchCase = SwitchCase (Maybe Expression) [Statement]
@@ -137,4 +147,6 @@ makeLenses ''Function
 makeLenses ''Identifier
 makeLenses ''Program
 makeLenses ''VariableDeclarator
+makeLenses ''VariableDecl
 makeLenses ''Block
+makeLenses ''Pattern
